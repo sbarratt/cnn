@@ -106,7 +106,6 @@ class HiddenLayer(Layer):
     def forward_propagation(self, I):
         """Computes output M(I,W) as a function of input I and parameters W."""
         assert I.shape[0] == self.num_input_units
-
         z = self.W.dot(I)
 
         return self.activation_function(z)
@@ -124,7 +123,7 @@ class HiddenLayer(Layer):
 
     def gradient_function(self, output_gradient, I):
         """Computes the weight gradient with respect to the output gradient."""
-        assert output_gradient.shape[0] == self.num_output_units
+        assert output_gradient.shape[0] == self.num_output_units, output_gradient.shape[0]
         assert I.shape[0] == self.num_input_units
 
         #return I[:, None].dot(output_gradient[None, :])
@@ -134,6 +133,7 @@ class HiddenLayer(Layer):
         """"Adds the weight gradients to the weights using some updating rules
         (batch, stochastic, momentum, weight decay, etc)."""
         assert weight_gradient.shape == (self.num_output_units, self.num_input_units)
+
         self.W -= learning_rate * weight_gradient
 
 
@@ -173,6 +173,7 @@ class NeuralNetwork():
         output, layer_inputs = self.forward_propagation(I)
 
         output_gradient = (output - O)
+
         for layer, layer_input in zip(self.layers[::-1], layer_inputs[::-1]):
             weight_gradient = layer.gradient_function(output_gradient, layer_input)
             layer.weight_update(weight_gradient, learning_rate)
@@ -208,6 +209,7 @@ class NeuralNetwork():
 
 
 if __name__ == '__main__':
+
     def sigmoid(x):
         return 1.0 / (1 + np.exp(-x))
     sigmoid = np.vectorize(sigmoid)
@@ -215,6 +217,26 @@ if __name__ == '__main__':
     def error_function(x, y):
         assert x.shape[0] == y.shape[0]
         return 0.5 * np.sum( (x - y) ** 2 )
+
+    ol = HiddenLayer(100, 10, sigmoid)
+
+    inp = np.random.random(100)
+    epsilon = 1e-6
+
+    out = ol.forward_propagation(inp)
+    out_epsilon = ol.forward_propagation(inp + epsilon)
+
+    grad_e = (out - out_epsilon) / epsilon
+
+    test = np.zeros(10)
+    test[0] = 1
+    grad = ol.backward_propagation(test, inp)
+
+    import IPython as ipy
+    ipy.embed()
+
+    import sys
+    sys.exit(0)
 
     nn = NeuralNetwork([HiddenLayer(28*28, 100, sigmoid), HiddenLayer(100, 10, sigmoid)], error_function)
     inp = np.random.random(28*28)
